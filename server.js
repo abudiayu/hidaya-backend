@@ -11,15 +11,17 @@ const allowedOrigins = [
   'http://localhost:5174',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5500',
-  // Production — set FRONTEND_URL on Render to your Vercel URL
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (Render health checks, curl, etc.)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
+      origin.endsWith('.onrender.com')
+    ) {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'));
@@ -32,7 +34,10 @@ app.use(cors({
 app.use(express.json({ limit: '20mb' }));        // large enough for base64 docs
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
-// ── Health check ──────────────────────────────────────────────────────────────
+// ── Health check (also handles root / for Render health pings) ───────────────
+app.get('/', (_, res) =>
+  res.json({ success: true, data: { message: 'Hidaya API running ✅', version: '2.0' } })
+);
 app.get('/api/health', (_, res) =>
   res.json({ success: true, data: { message: 'Hidaya API running ✅' } })
 );
